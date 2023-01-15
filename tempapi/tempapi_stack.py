@@ -38,7 +38,7 @@ class TempapiStack(Stack):
                 cidr_mask=28)
         subnet2 = SubnetConfiguration(
                 name="PrivateSubnet",
-                subnet_type=SubnetType.PRIVATE_WITH_NAT,
+                subnet_type=SubnetType.PRIVATE_WITH_EGRESS,
                 cidr_mask=28)
 
         vpc = ec2.Vpc(self, "tempapiVPC",
@@ -50,7 +50,7 @@ class TempapiStack(Stack):
             )
 
         vpc_subnets_pub = vpc.select_subnets(subnet_type=ec2.SubnetType.PUBLIC)
-        vpc_subnets_priv = vpc.select_subnets(subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT)
+        vpc_subnets_priv = vpc.select_subnets(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS)
 
         subnet_ids_pub = []
         for subnet in vpc_subnets_pub.subnets:
@@ -84,7 +84,7 @@ class TempapiStack(Stack):
         # create an SSM parameter vpc id
         vpc_param = aws_ssm.StringParameter(
             self, "VPC_Parameter",
-            parameter_name="/etl/vpc",
+            parameter_name="/gwapi/vpc",
             string_value=vpc_id,
             description='vpc id'
         )
@@ -92,7 +92,7 @@ class TempapiStack(Stack):
         # create an SSM parameter subnet public
         subnet_public_param = aws_ssm.StringParameter(
             self, "Subnet_Public_Parameter",
-            parameter_name="/etl/subnet_public",
+            parameter_name="/gwapi/subnet_public",
             string_value=subnet_ids_pub_str,
             description='subnet public'
         )
@@ -121,7 +121,7 @@ class TempapiStack(Stack):
             handler="lambda_function.lambda_handler",
             role=lambda_role,
             vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT),
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS),
             memory_size=3008,
             timeout=Duration.seconds(300),
             runtime=lambda_.Runtime.PYTHON_3_8,
@@ -131,7 +131,7 @@ class TempapiStack(Stack):
         # create an SSM parameter for the tempAPI Lambda Name
         self.lambda_name_param = aws_ssm.StringParameter(
             self, "Lambda_Name_Parameter",
-            parameter_name="/tempAPI/Lambda_NAME",
+            parameter_name="/gwapi/Lambda_NAME",
             string_value=self.lambda_function.function_name,
-            description='tempAPI Lambda Name'
+            description='GAteway API Lambda Name'
         )
