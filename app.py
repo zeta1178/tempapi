@@ -1,28 +1,30 @@
 #!/usr/bin/env python3
 import os
+import yaml
 
 import aws_cdk as cdk
+from aws_cdk import App, Tags, Environment
 
 from tempapi.tempapi_stack import TempapiStack
+from tempapi.gateway_stack import GatewayStack
 
+# loads local config
+config=yaml.safe_load(open('config.yml'))
+
+local_env=Environment(
+    account=os.environ.get("CDK_DEPLOY_ACCOUNT", os.environ["CDK_DEFAULT_ACCOUNT"]),
+    region=config['env']['region']
+)
 
 app = cdk.App()
-TempapiStack(app, "TempapiStack",
-    # If you don't specify 'env', this stack will be environment-agnostic.
-    # Account/Region-dependent features and context lookups will not work,
-    # but a single synthesized template can be deployed anywhere.
-
-    # Uncomment the next line to specialize this stack for the AWS Account
-    # and Region that are implied by the current CLI configuration.
-
-    #env=cdk.Environment(account=os.getenv('CDK_DEFAULT_ACCOUNT'), region=os.getenv('CDK_DEFAULT_REGION')),
-
-    # Uncomment the next line if you know exactly what Account and Region you
-    # want to deploy the stack to. */
-
-    #env=cdk.Environment(account='123456789012', region='us-east-1'),
-
-    # For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html
+tempapi=TempapiStack(app, 
+    "TempapiStack",
+    env=local_env,
     )
-
+gateway=GatewayStack(app, 
+    "GatewayStack",
+    ref_lambda=tempapi.funct_lambda,
+    ref_lambda_name=tempapi.funct_lambda_name,
+    env=local_env,
+    )
 app.synth()

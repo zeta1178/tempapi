@@ -1,0 +1,5 @@
+app:
+  namespace: "cdk"
+env:
+  id: "111111111"
+  region: "us-east-1"  
